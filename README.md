@@ -45,7 +45,7 @@ cd brain
 source venv/bin/activate
 python shipper.py
 ```
-
+![Captura](ataque.png)
 ---
 
 ## 📸 Vista Previa del Panel
