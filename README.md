@@ -1,3 +1,4 @@
+```markdown
 # 🕸️ Sentinel Mesh
 **Honeynet Distribuida e Inteligencia de Amenazas Nativa en la Nube**
 
@@ -28,27 +29,28 @@ La plataforma se divide en tres capas:
 ```bash
 cd dashboard
 docker-compose up -d
+```
 
-
-Ejecutando Sensores
-
+### Ejecutando Sensores
+```bash
 # En terminales separadas:
 go run sensor-ssh/cmd/main.go
 go run sensor-http/cmd/main.go
-   
+```
 
-
-Procesando Inteligencia
-
+### Procesando Inteligencia
+```bash
 cd brain
 source venv/bin/activate
 python shipper.py
+```
 
+---
 
 ## 📸 Vista Previa del Panel
 ![Captura del Dashboard](dashboard.PNG)
 
 ---
 
-⚠️ Aviso Legal
-Proyecto educativo. No desplegar en entornos de producción sin el aislamiento adecuado.-
+## ⚠️ Aviso Legal
+Proyecto educativo. No desplegar en entornos de producción sin el aislamiento adecuado.
