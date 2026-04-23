@@ -39,9 +39,6 @@ go run sensor-http/cmd/main.go
 ## 📸 Panel falso de Incio de sesion
 ![Panel falso de WordPress](panel.PNG)
 
-## 📸 Logs 
-![Registros en crudo en Kibana](logs.PNG)
-
 ### Procesando Inteligencia
 ```bash
 cd brain
@@ -53,6 +50,9 @@ python shipper.py
 
 ## 📸 Vista Previa del Panel
 ![Captura del Dashboard](dashboard.PNG)
+
+## 📸 Logs 
+![Registros en crudo en Kibana](logs.PNG)
 
 ---
 
