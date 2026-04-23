@@ -46,7 +46,7 @@ python shipper.py
 
 
 ## 📸 Vista Previa del Panel
-![Captura del Dashboard](dashboard.png)
+![Captura del Dashboard](dashboard.PNG)
 
 ---
 
