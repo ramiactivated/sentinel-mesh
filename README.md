@@ -1,4 +1,3 @@
-```markdown
 # 🕸️ Sentinel Mesh
 **Honeynet Distribuida e Inteligencia de Amenazas Nativa en la Nube**
 
