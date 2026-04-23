@@ -45,5 +45,10 @@ source venv/bin/activate
 python shipper.py
 
 
+## 📸 Vista Previa del Panel
+![Captura del Dashboard](dashboard.png)
+
+---
+
 ⚠️ Aviso Legal
 Proyecto educativo. No desplegar en entornos de producción sin el aislamiento adecuado.-
