@@ -36,6 +36,7 @@ docker-compose up -d
 go run sensor-ssh/cmd/main.go
 go run sensor-http/cmd/main.go
 ```
+![Panel falso de WordPress](nombre_de_tu_foto.png)
 
 ### Procesando Inteligencia
 ```bash
