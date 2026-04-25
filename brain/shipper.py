@@ -8,7 +8,7 @@ ELASTIC_URL = "http://localhost:9200/sentinel-attacks/_doc"
 HEADERS = {"Content-Type": "application/json"}
 
 # --- CONFIGURACIÓN DE TELEGRAM ---
-TELEGRAM_TOKEN = "tutoken"
+TELEGRAM_TOKEN = "tutokens"
 CHAT_ID = "tuid"
 
 def mandar_alerta_telegram(ip, archivo):
