@@ -1,2 +1,13 @@
+# Python
+__pycache__/
+venv/
+*.py[cod]
+
+# Logs y Datos (No queremos subir ataques reales)
+*.jsonl
+*.json
+*.txt
 logs/
-sensor-http/logs/
+
+# Secretos
+.env

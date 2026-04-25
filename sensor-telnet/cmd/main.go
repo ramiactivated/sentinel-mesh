@@ -61,6 +61,10 @@ func handleConnection(conn net.Conn) {
 	scanner.Scan()
 	password := strings.TrimSpace(scanner.Text())
 
+	// L POZO (Tarpit)
+	// Hacemos que el bot se quede atascado esperando 5 segundos
+	time.Sleep(5 * time.Second)
+
 	// 4. Simular que falla el acceso y echar al atacante
 	conn.Write([]byte("\nLogin incorrect\n"))
 

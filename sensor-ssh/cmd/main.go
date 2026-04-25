@@ -12,7 +12,6 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// Definimos la estructura de cómo se verá nuestro log en JSON
 type AttackLog struct {
 	Timestamp string `json:"timestamp"`
 	IP        string `json:"ip"`
@@ -23,65 +22,55 @@ type AttackLog struct {
 func main() {
 	config := &ssh.ServerConfig{
 		PasswordCallback: func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
-			// 1. Crear el objeto de ataque con la hora exacta
 			attack := AttackLog{
 				Timestamp: time.Now().Format(time.RFC3339),
 				IP:        c.RemoteAddr().String(),
 				Username:  c.User(),
 				Password:  string(pass),
 			}
+			
+			// Imprimir en pantalla para nosotros
+			fmt.Printf("👾 [ATAQUE SSH] Usuario: %s | IP: %s\n", attack.Username, attack.IP)
 
-			// 2. Convertir el objeto a formato JSON
-			jsonData, err := json.Marshal(attack)
-			if err != nil {
-				return nil, nil
-			}
+			// Guardar en el archivo JSON
+			file, _ := os.OpenFile("logs/attacks.jsonl", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			jsonData, _ := json.Marshal(attack)
+			file.WriteString(string(jsonData) + "\n")
+			file.Close()
 
-			// 3. Imprimir en consola para nosotros
-			fmt.Printf("👾 [ATAQUE CAPTURADO] %s\n", string(jsonData))
-
-			// 4. Guardar silenciosamente en el archivo (modo 'append' para no borrar lo anterior)
-			f, err := os.OpenFile("logs/attacks.jsonl", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-			if err == nil {
-				f.WriteString(string(jsonData) + "\n")
-				f.Close()
-			}
-
-			return nil, nil
+			return nil, fmt.Errorf("password rejected for %q", c.User())
 		},
 	}
 
+	// Cargar la llave privada
 	privateBytes, err := ioutil.ReadFile("keys/server.key")
 	if err != nil {
-		log.Fatal("Error cargando la clave privada: ", err)
+		log.Fatal("❌ Error: No se encuentra keys/server.key. Ejecuta ssh-keygen primero.")
 	}
-	private, err := ssh.ParsePrivateKey(privateBytes)
-	if err != nil {
-		log.Fatal("Error parseando la clave: ", err)
-	}
+	private, _ := ssh.ParsePrivateKey(privateBytes)
 	config.AddHostKey(private)
 
+	// Escuchar en el puerto 2222
 	listener, err := net.Listen("tcp", "0.0.0.0:2222")
 	if err != nil {
-		log.Fatal("Error al iniciar el listener: ", err)
+		log.Fatal("❌ Error abriendo puerto: ", err)
 	}
-	fmt.Println("🚀 Sentinel Sensor-SSH escuchando en el puerto 2222... (Guardando en JSON)")
+
+	fmt.Println("🚀 Sentinel Sensor-SSH escuchando en el puerto 2222...")
 
 	for {
-		nConn, err := listener.Accept()
-		if err != nil {
-			continue
-		}
-
-		go func(conn net.Conn) {
-			_, chans, reqs, err := ssh.NewServerConn(conn, config)
+		conn, _ := listener.Accept()
+		go func(c net.Conn) {
+			_, chans, reqs, err := ssh.NewServerConn(c, config)
 			if err != nil {
+				// Este mensaje nos dirá si falla el "apretón de manos"
+				fmt.Printf("⚠️ Intento de conexión fallido desde %s\n", c.RemoteAddr())
 				return
 			}
 			go ssh.DiscardRequests(reqs)
 			for newChannel := range chans {
-				newChannel.Reject(ssh.Prohibited, "No shell allowed")
+				newChannel.Reject(ssh.Prohibited, "no shell access")
 			}
-		}(nConn)
+		}(conn)
 	}
 }
