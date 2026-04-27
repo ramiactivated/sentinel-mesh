@@ -67,7 +67,8 @@ python shipper.py
 ---
 
 ## 📸 Vista Previa del Panel
-![Captura del Dashboard](dashboard.PNG)
+<img width="1916" height="965" alt="2026-04-27_14h12_30" src="https://github.com/user-attachments/assets/2d6930c0-0ae2-4d37-899c-a4a84f3c6b65" />
+
 
 ## 📸 Logs 
 ![Registros en crudo en Kibana](logs.PNG)
