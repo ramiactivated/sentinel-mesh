@@ -3,11 +3,16 @@ __pycache__/
 venv/
 *.pyc
 
-# Logs (No queremos subir tus ataques personales)
+# Logs de los sensores (No queremos subir tus datos de ataques)
 **/logs/*.jsonl
 **/logs/*.json
 *.json
 *.jsonl
 
-# Secretos (¡Muy importante!)
+# Binarios de Go
+sensor-http/main
+sensor-ssh/main
+sensor-telnet/main
+
+# Archivos de configuración sensibles
 .env
