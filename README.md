@@ -73,6 +73,8 @@ python shipper.py
 ![Registros en crudo en Kibana](logs.PNG)
 
 ## 📱 Alertas en Telegram
+<img width="942" height="2048" alt="WhatsApp Image 2026-04-27 at 14 09 42" src="https://github.com/user-attachments/assets/98b2ca0a-7627-46d2-ae3b-c02d1ca58e2f" />
+
 
 
 ---
