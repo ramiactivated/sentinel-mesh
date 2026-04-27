@@ -1,0 +1,1 @@
+❌ Error iniciando Telnet Sensor: listen tcp :2323: bind: address already in use

@@ -1,13 +1,13 @@
 # Python
 __pycache__/
 venv/
-*.py[cod]
+*.pyc
 
-# Logs y Datos (No queremos subir ataques reales)
-*.jsonl
+# Logs (No queremos subir tus ataques personales)
+**/logs/*.jsonl
+**/logs/*.json
 *.json
-*.txt
-logs/
+*.jsonl
 
-# Secretos
+# Secretos (¡Muy importante!)
 .env

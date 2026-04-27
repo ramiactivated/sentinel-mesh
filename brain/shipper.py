@@ -3,135 +3,75 @@ import requests
 import json
 import time
 
-# --- CONFIGURACIÓN DE ELASTICSEARCH ---
-# Usamos el endpoint con '_doc' para versiones modernas
+# --- CONFIGURACIÓN REAL ---
 ELASTIC_URL = "http://localhost:9200/sentinel-attacks/_doc"
 HEADERS = {"Content-Type": "application/json"}
+TELEGRAM_TOKEN = "8757724324:AAFbA602Yt2Y4Yq127mR1Chl_9J28Sbsz1w"
+CHAT_ID = "1099041798"
 
-# --- CONFIGURACIÓN DE TELEGRAM ---
-TELEGRAM_TOKEN = "tutokens"
-CHAT_ID = "tuid"
+def limpiar_ip(ip_sucia):
+    ip = str(ip_sucia).replace("[", "").replace("]", "")
+    if ":" in ip: ip = ip.split(":")[0]
+    if ip == "::1" or not ip: ip = "127.0.0.1"
+    return ip
 
-def mandar_alerta_telegram(ip, archivo):
+def mandar_alerta_telegram(ip, objetivo, tipo):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    mensaje = f"🚨 *ALERTA CRÍTICA SOC* 🚨\n\n👾 *Intruso:* `{ip}`\n📂 *Objetivo:* `{archivo}`\n\n🛡️ Sentinel Mesh ha interceptado el ataque."
-    datos = {
-        "chat_id": CHAT_ID,
-        "text": mensaje,
-        "parse_mode": "Markdown"
-    }
+    iconos = {"HTTP": "🌐", "SSH": "🔑", "TELNET": "📟"}
+    mensaje = (
+        f"🚨 *ALERTA CRÍTICA SOC* 🚨\n\n"
+        f"{iconos.get(tipo, '👾')} *Sensor:* `{tipo}`\n"
+        f"👤 *Intruso:* `{ip}`\n"
+        f"🎯 *Objetivo:* `{objetivo}`\n\n"
+        f"🛡️ _Sentinel Mesh ha interceptado el ataque._"
+    )
+    datos = {"chat_id": CHAT_ID, "text": mensaje, "parse_mode": "Markdown"}
     try:
-        requests.post(url, json=datos)
-    except Exception as e:
-        print("❌ Error contactando con Telegram:", e)
+        requests.post(url, json=datos, timeout=10)
+    except:
+        print("❌ Error contactando con Telegram.")
 
 def get_geo_info(ip):
-    # Si es IP local, mandamos a Null Island (0,0)
-    if "127.0.0.1" in ip or "[::1]" in ip or ip.startswith("192.") or ip.startswith("10."):
+    if ip == "127.0.0.1" or ip.startswith(("192.", "10.")):
         return {"country": "LocalNet", "city": "Laboratorio", "lat": 0.0, "lon": 0.0}
     try:
         response = requests.get(f"http://ip-api.com/json/{ip}", timeout=5).json()
-        if response.get("status") == "success":
-            return {
-                "country": response.get("country"),
-                "city": response.get("city"),
-                "lat": response.get("lat"),
-                "lon": response.get("lon")
-            }
+        return {"country": response.get("country"), "city": response.get("city"), "lat": response.get("lat"), "lon": response.get("lon")}
     except:
-        pass
-    return {"country": "Unknown", "city": "Unknown", "lat": 0.0, "lon": 0.0}
+        return {"country": "Unknown", "city": "Unknown", "lat": 0.0, "lon": 0.0}
 
 def ship_logs(filepath, attack_type):
-    if not os.path.exists(filepath):
+    if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
         return
 
     with open(filepath, 'r') as f:
         for line in f:
             try:
                 data = json.loads(line.strip())
-
-                # 1. Extraer e IP
-                raw_ip = data.get("ip", "")
-                ip = raw_ip.split("]")[0].replace("[", "") if "[" in raw_ip else raw_ip.split(":")[0]
+                ip = limpiar_ip(data.get("ip", "127.0.0.1"))
                 
-                # --- ¡LA LÍNEA MÁGICA QUE ARREGLA EL ERROR! ---
-                data["ip"] = ip 
-                # ----------------------------------------------
+                # --- Lógica de Alerta ---
+                objetivo = data.get("path") if attack_type == "HTTP" else f"User: {data.get('username')}"
+                mandar_alerta_telegram(ip, objetivo, attack_type)
 
-                # 2. Enriquecer con GeoIP
-                geo_data = get_geo_info(ip)
-
-                # --- CORRECCIÓN CLAVE PARA EL MAPA ---
-                # 'geo' debe ser solo un string "lat,lon" para que Kibana lo entienda
-                data["geo"] = f"{geo_data['lat']},{geo_data['lon']}"
-                # Guardamos el país y ciudad en campos aparte para poder filtrar
-                data["country"] = geo_data["country"]
-                data["city"] = geo_data["city"]
-                data["sensor_type"] = attack_type
-                # -------------------------------------
-
-                # 3. Enviar a Elasticsearch
-                resp = requests.post(ELASTIC_URL, headers=HEADERS, json=data)
-
-                if resp.status_code == 201 or resp.status_code == 200:
-                    print(f"✅ Inyectado ataque de {ip} ({data['country']}) en Elastic")
-                else:
-                    # Chivato de errores
-                    print(f"❌ Error Elastic ({resp.status_code}): {resp.text}")
-
-                time.sleep(0.5) # Pausa ligera
-
-            except Exception as e:
-                print(f"Error procesando línea: {e}")
-
-if __name__ == "__main__":
-    ssh_log = "../sensor-ssh/logs/attacks.jsonl"
-    web_log = "../sensor-http/logs/web_attacks.jsonl"
-    telnet_log = "/home/rami/sentinel-mesh/telnet_attacks.json" # Ruta absoluta recomendada
-
-    print("🤖 Motor de Inteligencia activado.")
-
-    try:
-        while True:
-            # --- SECCIÓN TELEGRAM ---
-            def limpiar_ip(ip_sucia):
-                ip_sucia = str(ip_sucia)
-                if ip_sucia.startswith("[") or "::1" in ip_sucia or "127.0.0.1" in ip_sucia:
-                    return "127.0.0.1"
-                return ip_sucia.split(":")[0]
-
-            # Telegram: Web
-            try:
-                if os.path.exists(web_log):
-                    with open(web_log, 'r') as f:
-                        for linea in f:
-                            if any(x in linea for x in ["/.env", "/wp-config", ".php"]):
-                                d = json.loads(linea)
-                                mandar_alerta_telegram(limpiar_ip(d.get("ip")), d.get("path", "Web"))
+                # --- Envío a Elastic ---
+                geo = get_geo_info(ip)
+                data.update({"ip": ip, "geo": f"{geo['lat']},{geo['lon']}", "country": geo["country"], "sensor_type": attack_type})
+                requests.post(ELASTIC_URL, headers=HEADERS, json=data, timeout=10)
+                print(f"✅ [{attack_type}] Alerta enviada y log inyectado.")
             except: pass
 
-            # Telegram: SSH/Telnet
-            for log_f, name in [(ssh_log, "SSH"), (telnet_log, "TELNET")]:
-                try:
-                    if os.path.exists(log_f):
-                        with open(log_f, 'r') as f:
-                            for linea in f:
-                                d = json.loads(linea)
-                                if d.get("username") in ["root", "admin"]:
-                                    mandar_alerta_telegram(limpiar_ip(d.get("ip")), f"Fuerza Bruta {name}")
-                except: pass
+if __name__ == "__main__":
+    # RUTAS VERIFICADAS
+    LOGS = [
+        ("../sensor-ssh/logs/attacks.jsonl", "SSH"),
+        ("../sensor-http/logs/web_attacks.jsonl", "HTTP"),
+        ("/home/rami/sentinel-mesh/sensor-telnet/telnet_attacks.json", "TELNET")
+    ]
 
-            # --- SECCIÓN ELASTIC ---
-            ship_logs(ssh_log, "SSH")
-            ship_logs(web_log, "HTTP")
-            ship_logs(telnet_log, "TELNET")
-
-            # Vaciar archivos
-            for f_to_clear in [ssh_log, web_log, telnet_log]:
-                if os.path.exists(f_to_clear):
-                    open(f_to_clear, 'w').close()
-
-            time.sleep(5)
-    except KeyboardInterrupt:
-        print("\n🛑 SOC apagado.")
+    print("🤖 Motor activado con Telegram oficial.")
+    while True:
+        for path, tipo in LOGS:
+            ship_logs(path, tipo)
+            if os.path.exists(path): open(path, 'w').close()
+        time.sleep(2)

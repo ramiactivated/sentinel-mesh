@@ -1,0 +1,2 @@
+🕸️  Sensor HTTP (Web Labyrinth) escuchando en el puerto :8080
+❌ Error iniciando Web Sensor: listen tcp :8080: bind: address already in use
