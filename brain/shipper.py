@@ -4,6 +4,7 @@ import json
 import time
 
 # --- CONFIGURACIÓN DE ELASTICSEARCH ---
+# Usamos el endpoint con '_doc' para versiones modernas
 ELASTIC_URL = "http://localhost:9200/sentinel-attacks/_doc"
 HEADERS = {"Content-Type": "application/json"}
 
@@ -15,8 +16,8 @@ def mandar_alerta_telegram(ip, archivo):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     mensaje = f"🚨 *ALERTA CRÍTICA SOC* 🚨\n\n👾 *Intruso:* `{ip}`\n📂 *Objetivo:* `{archivo}`\n\n🛡️ Sentinel Mesh ha interceptado el ataque."
     datos = {
-        "chat_id": CHAT_ID, 
-        "text": mensaje, 
+        "chat_id": CHAT_ID,
+        "text": mensaje,
         "parse_mode": "Markdown"
     }
     try:
@@ -25,6 +26,7 @@ def mandar_alerta_telegram(ip, archivo):
         print("❌ Error contactando con Telegram:", e)
 
 def get_geo_info(ip):
+    # Si es IP local, mandamos a Null Island (0,0)
     if "127.0.0.1" in ip or "[::1]" in ip or ip.startswith("192.") or ip.startswith("10."):
         return {"country": "LocalNet", "city": "Laboratorio", "lat": 0.0, "lon": 0.0}
     try:
@@ -44,29 +46,41 @@ def ship_logs(filepath, attack_type):
     if not os.path.exists(filepath):
         return
 
-    print(f"📦 Enviando logs de {attack_type} a Elastic...")
-
     with open(filepath, 'r') as f:
         for line in f:
             try:
                 data = json.loads(line.strip())
 
-                # Extraer y limpiar IP
+                # 1. Extraer e IP
                 raw_ip = data.get("ip", "")
                 ip = raw_ip.split("]")[0].replace("[", "") if "[" in raw_ip else raw_ip.split(":")[0]
+                
+                # --- ¡LA LÍNEA MÁGICA QUE ARREGLA EL ERROR! ---
+                data["ip"] = ip 
+                # ----------------------------------------------
 
-                # Enriquecer con GeoIP
-                geo = get_geo_info(ip)
+                # 2. Enriquecer con GeoIP
+                geo_data = get_geo_info(ip)
+
+                # --- CORRECCIÓN CLAVE PARA EL MAPA ---
+                # 'geo' debe ser solo un string "lat,lon" para que Kibana lo entienda
+                data["geo"] = f"{geo_data['lat']},{geo_data['lon']}"
+                # Guardamos el país y ciudad en campos aparte para poder filtrar
+                data["country"] = geo_data["country"]
+                data["city"] = geo_data["city"]
                 data["sensor_type"] = attack_type
-                data["geo"] = geo
+                # -------------------------------------
 
-                # Enviar a Elasticsearch
+                # 3. Enviar a Elasticsearch
                 resp = requests.post(ELASTIC_URL, headers=HEADERS, json=data)
-                if resp.status_code == 201:
-                    print(f"✅ Inyectado ataque de {ip} ({geo['country']})")
 
-                # Pequeña pausa para no saturar la API de geolocalización
-                time.sleep(1)
+                if resp.status_code == 201 or resp.status_code == 200:
+                    print(f"✅ Inyectado ataque de {ip} ({data['country']}) en Elastic")
+                else:
+                    # Chivato de errores
+                    print(f"❌ Error Elastic ({resp.status_code}): {resp.text}")
+
+                time.sleep(0.5) # Pausa ligera
 
             except Exception as e:
                 print(f"Error procesando línea: {e}")
@@ -74,65 +88,50 @@ def ship_logs(filepath, attack_type):
 if __name__ == "__main__":
     ssh_log = "../sensor-ssh/logs/attacks.jsonl"
     web_log = "../sensor-http/logs/web_attacks.jsonl"
-    telnet_log = "../telnet_attacks.json"
+    telnet_log = "/home/rami/sentinel-mesh/telnet_attacks.json" # Ruta absoluta recomendada
 
-    print("🤖 Motor de Inteligencia activado en MODO AUTOMÁTICO.")
-    print("Vigilando los sensores 24/7... (Pulsa Ctrl+C para apagarlo)")
+    print("🤖 Motor de Inteligencia activado.")
 
     try:
         while True:
-# --- ESPIONAJE DE ALTO NIVEL (Alertas a Telegram) ---
-            # Función interna para limpiar la IP antes de mandarla al móvil
+            # --- SECCIÓN TELEGRAM ---
             def limpiar_ip(ip_sucia):
                 ip_sucia = str(ip_sucia)
-                # Si es IPv6 local o empieza por corchete, devolvemos LocalNet
                 if ip_sucia.startswith("[") or "::1" in ip_sucia or "127.0.0.1" in ip_sucia:
-                    return "127.0.0.1 (Local)"
-                # Quitar el puerto si existe (ej: 192.168.1.1:5432 -> 192.168.1.1)
+                    return "127.0.0.1"
                 return ip_sucia.split(":")[0]
 
-            # 1. Vigilar Web
+            # Telegram: Web
             try:
-                with open(web_log, 'r') as f:
-                    for linea in f:
-                        if "/.env" in linea or "/wp-config.php.bak" in linea:
-                            try:
-                                datos = json.loads(linea)
-                                ip = limpiar_ip(datos.get("ip", "Desconocida"))
-                                mandar_alerta_telegram(ip, datos.get("path", "Archivo Secreto Web"))
-                            except: pass
-            except FileNotFoundError: pass
-
-            # 2. Vigilar SSH y Telnet
-            for archivo_log, nombre_puerta in [(ssh_log, "SSH"), (telnet_log, "TELNET")]:
-                try:
-                    with open(archivo_log, 'r') as f:
+                if os.path.exists(web_log):
+                    with open(web_log, 'r') as f:
                         for linea in f:
-                            try:
-                                datos = json.loads(linea)
-                                user = datos.get("username", "").lower()
-                                if user in ["root", "admin", "administrator"]:
-                                    ip = limpiar_ip(datos.get("ip", "Desconocida"))
-                                    mandar_alerta_telegram(ip, f"Fuerza Bruta en {nombre_puerta} (User: {user})")
-                            except: pass
-                except FileNotFoundError: pass
-            # ----------------------------------------------------
-            # ----------------------------------------------------
-            # ----------------------------------------------------
-            # ----------------------------------------------------
+                            if any(x in linea for x in ["/.env", "/wp-config", ".php"]):
+                                d = json.loads(linea)
+                                mandar_alerta_telegram(limpiar_ip(d.get("ip")), d.get("path", "Web"))
+            except: pass
 
-            # 1. Leer y enviar todo lo nuevo que hayan capturado los sensores
+            # Telegram: SSH/Telnet
+            for log_f, name in [(ssh_log, "SSH"), (telnet_log, "TELNET")]:
+                try:
+                    if os.path.exists(log_f):
+                        with open(log_f, 'r') as f:
+                            for linea in f:
+                                d = json.loads(linea)
+                                if d.get("username") in ["root", "admin"]:
+                                    mandar_alerta_telegram(limpiar_ip(d.get("ip")), f"Fuerza Bruta {name}")
+                except: pass
+
+            # --- SECCIÓN ELASTIC ---
             ship_logs(ssh_log, "SSH")
             ship_logs(web_log, "HTTP")
             ship_logs(telnet_log, "TELNET")
 
-            # 2. Vaciar los archivos de texto para no enviar datos repetidos en la próxima vuelta
-            open(ssh_log, 'w').close()
-            open(web_log, 'w').close()
-            open(telnet_log, 'w').close()
+            # Vaciar archivos
+            for f_to_clear in [ssh_log, web_log, telnet_log]:
+                if os.path.exists(f_to_clear):
+                    open(f_to_clear, 'w').close()
 
-            # 3. Descansar 5 segundos antes de volver a mirar (para no saturar la CPU)
             time.sleep(5)
-
     except KeyboardInterrupt:
-        print("\n🛑 Apagando el motor de inteligencia de forma segura. ¡Hasta la próxima!")
+        print("\n🛑 SOC apagado.")
