@@ -6,20 +6,38 @@
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![Elasticsearch](https://img.shields.io/badge/Elasticsearch-005571?style=for-the-badge&logo=elasticsearch&logoColor=white)
 
-Sentinel Mesh es una arquitectura de *honeynet* modular y ligera diseñada para capturar, enriquecer y visualizar la actividad maliciosa de red en tiempo real. Integra Inteligencia de Amenazas (Threat Intelligence y GeoIP) de forma automatizada y envía los datos a un panel centralizado (SOC).
-
+Sentinel Mesh es una arquitectura de honeynet modular diseñada para capturar, analizar y alertar sobre actividad maliciosa en tiempo real. El sistema simula servicios vulnerables para atraer atacantes, extrae sus credenciales y geolocaliza su origen.
 ---
 
-## 🏗️ Resumen de la Arquitectura
+## 🏗️Arquitectura del Sistema
+La plataforma se compone de tres capas integradas:
 
-La plataforma se divide en tres capas:
+Sensores Activos (Go): Honeypots ligeros de alta concurrencia:
 
-1. **Sensores (Go):** Honeypots de alta concurrencia.
-   - `Sensor-SSH`: Captura fuerza bruta en el puerto 2222.
-   - `Sensor-HTTP`: Simula paneles vulnerables y registra ataques web.
-2. **Cerebro (Python):** Motor que procesa logs JSON y geolocaliza las IPs de los atacantes.
-3. **SOC Central (Docker):** Pila Elastic (Elasticsearch y Kibana) para visualizar ataques en tiempo real.
+Sensor-SSH: Emula un servidor SSH en el puerto 2222, capturando intentos de fuerza bruta.
 
+Sensor-HTTP: Simula paneles de administración (WordPress, phpMyAdmin) y trampas .env.
+
+Sensor-Telnet: Captura intentos de acceso en protocolos heredados.
+
+Cerebro / Shipper (Python): Motor de procesamiento que realiza:
+
+Enriquecimiento GeoIP: Localización de ataques por país y ciudad.
+
+Análisis Forense: Extracción de usuarios y contraseñas probados por los atacantes.
+
+Alertas Críticas: Notificaciones instantáneas vía Telegram.
+
+SOC Central (Docker): Pila Elastic (Elasticsearch y Kibana) para visualización de mapas y métricas de ataque.
+
+🔥 Características Principales
+Captura de Credenciales: Registro detallado de user y password utilizados en ataques de fuerza bruta.
+
+Alertas en Tiempo Real: Notificaciones inmediatas a dispositivos móviles mediante Telegram Bot API.
+
+Visualización Geoespacial: Mapas de calor en Kibana para identificar el origen geográfico de las amenazas.
+
+Persistencia con Systemd: Configurado para arrancar automáticamente como servicio del sistema.
 ---
 
 ## 🚀 Inicio Rápido
@@ -49,12 +67,24 @@ python shipper.py
 ---
 
 ## 📸 Vista Previa del Panel
-![Captura del Dashboard](dashboard.PNG)
+<img width="1916" height="965" alt="2026-04-27_14h12_30" src="https://github.com/user-attachments/assets/2d6930c0-0ae2-4d37-899c-a4a84f3c6b65" />
+
 
 ## 📸 Logs 
 ![Registros en crudo en Kibana](logs.PNG)
 
+## 📱 Alertas en Telegram
+<img width="942" height="2048" alt="WhatsApp Image 2026-04-27 at 14 09 42" src="https://github.com/user-attachments/assets/98b2ca0a-7627-46d2-ae3b-c02d1ca58e2f" />
+
+
+
 ---
 
+🛠️ Instalación como Servicio (Producción)
+Para mantener Sentinel Mesh activo 24/7 tras reinicios:
+sudo cp deployment/*.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now sentinel-shipper sentinel-http sentinel-ssh sentinel-telnet
+---
 ## ⚠️ Aviso Legal
 Proyecto educativo. No desplegar en entornos de producción sin el aislamiento adecuado.
