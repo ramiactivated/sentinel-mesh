@@ -1,117 +1,87 @@
 # 🕸️ Sentinel Mesh
+
 **Honeynet Distribuida e Inteligencia de Amenazas Nativa en la Nube**
+   
+Sentinel Mesh es una arquitectura de honeynet modular diseñada para capturar, analizar y alertar sobre actividad maliciosa en tiempo real. El sistema simula servicios vulnerables para atraer atacantes, extrae sus credenciales y geolocaliza su origen de forma autónoma.
 
-![Go](https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![Elasticsearch](https://img.shields.io/badge/Elasticsearch-005571?style=for-the-badge&logo=elasticsearch&logoColor=white)
+<img width="789" height="514" alt="2026-05-01_09h57_01" src="https://github.com/user-attachments/assets/8abf5594-f7a3-4a3e-8934-243245ab8fa4" />
 
-Sentinel Mesh es una arquitectura de honeynet modular diseñada para capturar, analizar y alertar sobre actividad maliciosa en tiempo real. El sistema simula servicios vulnerables para atraer atacantes, extrae sus credenciales y geolocaliza su origen.
+
 ---
 
-## 🏗️Arquitectura del Sistema
+## 🏗️ Arquitectura del Sistema
+
 La plataforma se compone de tres capas integradas:
 
-Sensores Activos (Go): Honeypots ligeros de alta concurrencia:
+1. **Sensores Activos (Go):** Honeypots ligeros.
+   * **Sensor-SSH (Puerto 22):** Emula un servidor SSH estándar, capturando intentos de fuerza bruta.
+   * **Sensor-HTTP (Puerto 8080):** Simula paneles de administración y trampas web.
+   * **Sensor-Telnet (Puerto 2323):** Captura intentos de acceso en protocolos heredados.
 
-Sensor-SSH: Emula un servidor SSH en el puerto 2222, capturando intentos de fuerza bruta.
+2. **Cerebro / Shipper (Python):** Motor de procesamiento que realiza:
+   * **Enriquecimiento GeoIP:** Localización de ataques por país y ciudad a través de APIs externas.
+   * **Análisis Forense:** Extracción de usuarios y contraseñas probados por los atacantes.
 
-Sensor-HTTP: Simula paneles de administración (WordPress, phpMyAdmin) y trampas .env.
+3. **SOC Central (Elastic Stack):** Pila de Elasticsearch y Kibana para almacenamiento, indexación y visualización de métricas de ataque.
 
-Sensor-Telnet: Captura intentos de acceso en protocolos heredados.
-
-Cerebro / Shipper (Python): Motor de procesamiento que realiza:
-
-Enriquecimiento GeoIP: Localización de ataques por país y ciudad.
-
-Análisis Forense: Extracción de usuarios y contraseñas probados por los atacantes.
-
-Alertas Críticas: Notificaciones instantáneas vía Telegram.
-
-SOC Central (Docker): Pila Elastic (Elasticsearch y Kibana) para visualización de mapas y métricas de ataque.
-
-🔥 Características Principales
-Captura de Credenciales: Registro detallado de user y password utilizados en ataques de fuerza bruta.
-
-Alertas en Tiempo Real: Notificaciones inmediatas a dispositivos móviles mediante Telegram Bot API.
-
-Visualización Geoespacial: Mapas de calor en Kibana para identificar el origen geográfico de las amenazas.
-
-Persistencia con Systemd: Configurado para arrancar automáticamente como servicio del sistema.
----
-
-## 🚀 Inicio Rápido
-
-### Levantando el SOC
-```bash
-cd dashboard
-docker-compose up -d
-```
-
-### Ejecutando Sensores
-```bash
-# En terminales separadas:
-go run sensor-ssh/cmd/main.go
-go run sensor-http/cmd/main.go
-```
-## 📸 Panel falso de Incio de sesion
-![Panel falso de WordPress](panel.PNG)
-
-### Procesando Inteligencia
-```bash
-cd brain
-source venv/bin/activate
-python shipper.py
-```
-![Captura](ataque.png)
----
-
-## 📸 Vista Previa del Panel
-<img width="1916" height="965" alt="2026-04-27_14h12_30" src="https://github.com/user-attachments/assets/2d6930c0-0ae2-4d37-899c-a4a84f3c6b65" />
-
-
-## 📸 Logs 
-![Registros en crudo en Kibana](logs.PNG)
-
-## 📱 Alertas en Telegram
-<img width="942" height="2048" alt="WhatsApp Image 2026-04-27 at 14 09 42" src="https://github.com/user-attachments/assets/98b2ca0a-7627-46d2-ae3b-c02d1ca58e2f" />
-
+![Gráfico de Sensores]
+<img width="921" height="510" alt="2026-05-01_09h57_23" src="https://github.com/user-attachments/assets/d0d4dcae-f432-4894-b538-3d49f3453765" />
 
 
 ---
 
-🛠️ Instalación como Servicio (Producción)
-Para mantener Sentinel Mesh activo 24/7 tras reinicios:
-sudo cp deployment/*.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now sentinel-shipper sentinel-http sentinel-ssh sentinel-telnet
+## 🔥 Características Principales
+
+* 🎯 **Captura de Credenciales:** Registro detallado de *user* y *password* utilizados en ataques de fuerza bruta.
+* 📱 **Alertas en Tiempo Real:** Notificaciones inmediatas a dispositivos móviles mediante Telegram Bot API.
+* 🗺️ **Visualización Geoespacial:** Mapas para identificar el origen geográfico de las amenazas.
+* 🔄 **Persistencia Autónoma:** Configurado para arrancar automáticamente y sobrevivir a reinicios del servidor.
+
+### 📱 Alertas en Telegram
+El sistema cuenta con un bot que evalúa cada ataque, geolocaliza la IP del intruso y envía un informe detallado:
+
+![Alertas Telegram]
+<img width="942" height="2048" alt="WhatsApp Image 2026-05-01 at 09 59 02" src="https://github.com/user-attachments/assets/a53104fd-3a88-40d2-a30e-c58d7f355763" />
+
+
 ---
 
-🚀 Despliegue en AWS (EC2)
-El sistema está diseñado para ejecutarse de forma autónoma en una instancia Ubuntu Server 22.04 LTS en Amazon Web Services.
+## 📊 Análisis de Datos e Inteligencia
 
-🛡️ Configuración de Red (Security Groups)
-Para el correcto funcionamiento del SOC, se han abierto los siguientes puertos:
+Sentinel Mesh no solo recoge logs, sino que extrae inteligencia procesable para identificar patrones de ataque, credenciales por defecto más buscadas (como `admin` o `root`) y las IPs más agresivas.
 
-2222 (TCP): Acceso SSH administrativo (real).
+**Credenciales más utilizadas por los atacantes:**
 
-22 (TCP): Sensor Honeypot SSH (cebo).
+![Tabla de Credenciales]
+<img width="930" height="237" alt="2026-05-01_09h57_17" src="https://github.com/user-attachments/assets/b3db4eb8-06dd-4c1f-a9d0-ba0ea0d1a049" />
 
-2323 (TCP): Sensor Honeypot Telnet (cebo).
 
-8080 (TCP): Sensor Honeypot HTTP (cebo).
+**Top IPs Atacantes:**
 
-5601 (TCP): Acceso web al Dashboard de Kibana.
+![Gráfico de IPs]
+<img width="930" height="512" alt="2026-05-01_09h57_08" src="https://github.com/user-attachments/assets/eb0e9022-b3dc-4d52-a862-37fe09d28293" />
 
-🔄 Persistencia y Automatización
-Para garantizar que los sensores y el sistema de alertas se inicien automáticamente tras un reinicio del servidor, se utiliza un script de inicio y una tarea programada en cron.
 
-Script de inicio (iniciar_SOC.sh): Centraliza el arranque de todos los sensores (Go) y el script de envío de alertas (Python) en segundo plano.
-
-Crontab: Se ha configurado la instrucción @reboot para ejecutar el script de inicio de forma automática al arrancar el sistema.
-
-📊 Visualización
-Los datos capturados se inyectan en tiempo real en un stack de Elasticsearch y se visualizan a través de un Dashboard personalizado en Kibana, permitiendo el análisis geográfico de los ataques y el estudio de las credenciales más utilizadas.
 ---
+
+## 🚀 Despliegue en AWS (EC2)
+
+El sistema está diseñado para ejecutarse de forma autónoma en una instancia **Ubuntu Server 22.04 LTS** en Amazon Web Services.
+
+### 🛡️ Configuración de Red (Security Groups)
+Para el correcto funcionamiento del SOC y separar el tráfico de administración del tráfico malicioso, se han configurado las siguientes reglas:
+
+![Tabla de Puertos]
+<img width="774" height="168" alt="2026-05-01_09h57_57" src="https://github.com/user-attachments/assets/365a5dcd-e78b-4968-bcc9-24742de5685c" />
+
+
+### 🔄 Persistencia y Automatización
+Para garantizar que los sensores y el sistema de alertas se inicien automáticamente tras un reinicio del servidor en la nube, se utiliza:
+* **Script de inicio (`iniciar_SOC.sh`):** Centraliza el arranque de todos los sensores (Go) y el script de envío de alertas (Python) en segundo plano (`nohup`). Los sensores que requieren puertos privilegiados (22) se ejecutan mediante `sudo`.
+* **Crontab:** Se ha configurado la instrucción `@reboot` para ejecutar el script de inicio de forma completamente desatendida al arrancar el sistema.
+
+---
+
 ## ⚠️ Aviso Legal
-Proyecto educativo. No desplegar en entornos de producción sin el aislamiento adecuado.
+
+**Proyecto educativo y de investigación.** No desplegar en redes corporativas ni en entornos de producción sin el aislamiento adecuado, ya que la simulación de vulnerabilidades puede atraer tráfico malicioso indeseado a la red local.
