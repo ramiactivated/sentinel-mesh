@@ -24,7 +24,7 @@ La plataforma se compone de tres capas integradas:
 
 3. **SOC Central (Elastic Stack):** Pila de Elasticsearch y Kibana para almacenamiento, indexación y visualización de métricas de ataque.
 
-![Gráfico de Sensores]
+Gráfico de Sensores
 <img width="921" height="510" alt="2026-05-01_09h57_23" src="https://github.com/user-attachments/assets/d0d4dcae-f432-4894-b538-3d49f3453765" />
 
 
@@ -40,7 +40,7 @@ La plataforma se compone de tres capas integradas:
 ### 📱 Alertas en Telegram
 El sistema cuenta con un bot que evalúa cada ataque, geolocaliza la IP del intruso y envía un informe detallado:
 
-![Alertas Telegram]
+Alertas Telegram
 <img width="942" height="2048" alt="WhatsApp Image 2026-05-01 at 09 59 02" src="https://github.com/user-attachments/assets/a53104fd-3a88-40d2-a30e-c58d7f355763" />
 
 
@@ -52,13 +52,13 @@ Sentinel Mesh no solo recoge logs, sino que extrae inteligencia procesable para 
 
 **Credenciales más utilizadas por los atacantes:**
 
-![Tabla de Credenciales]
+Tabla de Credenciales
 <img width="930" height="237" alt="2026-05-01_09h57_17" src="https://github.com/user-attachments/assets/b3db4eb8-06dd-4c1f-a9d0-ba0ea0d1a049" />
 
 
 **Top IPs Atacantes:**
 
-![Gráfico de IPs]
+Gráfico de IPs
 <img width="930" height="512" alt="2026-05-01_09h57_08" src="https://github.com/user-attachments/assets/eb0e9022-b3dc-4d52-a862-37fe09d28293" />
 
 
@@ -71,7 +71,7 @@ El sistema está diseñado para ejecutarse de forma autónoma en una instancia *
 ### 🛡️ Configuración de Red (Security Groups)
 Para el correcto funcionamiento del SOC y separar el tráfico de administración del tráfico malicioso, se han configurado las siguientes reglas:
 
-![Tabla de Puertos]
+Tabla de Puertos
 <img width="774" height="168" alt="2026-05-01_09h57_57" src="https://github.com/user-attachments/assets/365a5dcd-e78b-4968-bcc9-24742de5685c" />
 
 
