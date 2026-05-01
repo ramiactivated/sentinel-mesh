@@ -111,7 +111,7 @@ Script de inicio (iniciar_SOC.sh): Centraliza el arranque de todos los sensores 
 Crontab: Se ha configurado la instrucción @reboot para ejecutar el script de inicio de forma automática al arrancar el sistema.
 
 📊 Visualización
-Los datos capturados se inyectan en tiempo real en un stack de Elasticsearch y se visualizan a través de un Dashboard personalizado en Kibana, permitiendo el análisis geográfico de los ataques y el estudio de las credenciales más utilizadas por los bots.
+Los datos capturados se inyectan en tiempo real en un stack de Elasticsearch y se visualizan a través de un Dashboard personalizado en Kibana, permitiendo el análisis geográfico de los ataques y el estudio de las credenciales más utilizadas.
 ---
 ## ⚠️ Aviso Legal
 Proyecto educativo. No desplegar en entornos de producción sin el aislamiento adecuado.
